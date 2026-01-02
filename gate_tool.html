@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Grandview Gate Tool</title>
-  <link rel="stylesheet" href="css/ultra_ds_g.css" />
+  <link rel="stylesheet" href="gate_tool/css/ultra_ds_g.css" />
   <style>
     /* Embed mode: hide Ultra UI; parent app provides controls */
     html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#0b1220; }
@@ -33,16 +33,16 @@
     <div id="progress"></div>
     <div id="lg"></div>
   </div>
-  <script src="js/jqmin.js"></script>
-  <script src="js/jqm_min.js"></script>
-  <script src="js/iscroll-lite.js"></script>
-  <script src="js/three.min_086.js"></script>
-  <script src="js/Detector.js"></script>
-  <script src="js/CopyShader.js"></script>
-  <script src="js/RGBELoader.js"></script>
-  <script src="js/HDRCubeTextureLoader.js"></script>
-  <script src="js/PMREMGenerator.js"></script>
-  <script src="js/PMREMCubeUVPacker.js"></script>
+  <script src="gate_tool/js/jqmin.js"></script>
+  <script src="gate_tool/js/jqm_min.js"></script>
+  <script src="gate_tool/js/iscroll-lite.js"></script>
+  <script src="gate_tool/js/three.min_086.js"></script>
+  <script src="gate_tool/js/Detector.js"></script>
+  <script src="gate_tool/js/CopyShader.js"></script>
+  <script src="gate_tool/js/RGBELoader.js"></script>
+  <script src="gate_tool/js/HDRCubeTextureLoader.js"></script>
+  <script src="gate_tool/js/PMREMGenerator.js"></script>
+  <script src="gate_tool/js/PMREMCubeUVPacker.js"></script>
   <script>
     // MVP stability patch: disable HDR environment loading.
     // Ultra's gate renderer uses RGBELoader/HDRCubeTextureLoader + PMREM for PBR lighting.
@@ -79,11 +79,22 @@
       if (THREE.HDRCubeTextureLoader && THREE.HDRCubeTextureLoader.prototype) {
         THREE.HDRCubeTextureLoader.prototype.load = function(urls, onLoad, onProgress, onError){
           try {
-            var cube = new THREE.CubeTexture([]);
-            cube.needsUpdate = true;
-            if (typeof onLoad === 'function') {
-              setTimeout(function(){ onLoad(cube); }, 0);
+            // Provide a real 6-face 1x1 CubeTexture so downstream PMREM/material code doesn't
+            // crash or silently render black.
+            function faceCanvas(){
+              var c = document.createElement('canvas');
+              c.width = 1; c.height = 1;
+              var ctx = c.getContext('2d');
+              ctx.fillStyle = '#808080';
+              ctx.fillRect(0,0,1,1);
+              return c;
             }
+            var faces = [faceCanvas(), faceCanvas(), faceCanvas(), faceCanvas(), faceCanvas(), faceCanvas()];
+            var cube = new THREE.CubeTexture(faces);
+            cube.needsUpdate = true;
+            cube.magFilter = THREE.LinearFilter;
+            cube.minFilter = THREE.LinearFilter;
+            if (typeof onLoad === 'function') setTimeout(function(){ onLoad(cube); }, 0);
             return cube;
           } catch (e) {
             if (typeof onError === 'function') onError(e);
@@ -92,13 +103,23 @@
       }
     })();
   </script>
-  <script src="js/CSSPlugin.min.js"></script>
-  <script src="js/ultra_dsg_min.js"></script>
+  <script src="gate_tool/js/CSSPlugin.min.js"></script>
+  <script src="gate_tool/js/ultra_dsg_min.js"></script>
   <script>
     // Parent bridge: drive Ultra gate renderer without showing its UI.
     (function(){
-      function ready(){
-        return (typeof window.stlArr !== 'undefined' && typeof window.gOpt === 'function' && typeof window.stl === 'function');
+      // Ultra init is async (loads textures/models). Queue commands until ready.
+      var cmdQueue = [];
+      var readyPoll = null;
+
+      function isReady(){
+        return (
+          typeof window.stlArr !== 'undefined' &&
+          typeof window.gOpt === 'function' &&
+          typeof window.stl === 'function' &&
+          typeof window.viz === 'function' &&
+          typeof window.rndr === 'function'
+        );
       }
 
       function findStyleIndexByCode(code){
@@ -109,57 +130,78 @@
         return null;
       }
 
-      function applyStyleByCode(code){
+      function ensureVisible(){
         var usi = document.getElementById('usi');
         if (usi) usi.style.display = 'block';
+      }
+
+      function tryRender(attemptFn, tries){
+        tries = tries || 0;
+        try {
+          return attemptFn();
+        } catch (e) {
+          // Common failure while assets are still loading: v0() inside viz() toggles
+          // .visible on groups that aren't ready yet.
+          if (tries < 30) {
+            setTimeout(function(){ tryRender(attemptFn, tries + 1); }, 100);
+          }
+          return false;
+        }
+      }
+
+      function applyStyleByCode(code){
+        ensureVisible();
         var idx = findStyleIndexByCode(code);
         if (idx === null) return false;
         window.gN = idx;
-        // Reset dependent options + rerender (matches Ultra UI click behavior)
-        window.gOpt(true);
-        window.stl(window.viz(window.rndr));
-        if (typeof window.kMnu === 'function') window.kMnu();
-        return true;
+        return tryRender(function(){
+          // Reset dependent options + rerender (mirrors Ultra UI behavior)
+          window.gOpt(true);
+          window.stl(window.viz(window.rndr));
+          if (typeof window.kMnu === 'function') window.kMnu();
+          return true;
+        });
       }
 
       function resetGate(){
-        // Reset to default style (keeps renderer visible so the background shows)
-        try{
-          var usi = document.getElementById('usi');
-          if (usi) usi.style.display = 'block';
-          if (typeof window.gOpt === 'function' && typeof window.stl === 'function'){
-            window.gN = 1; // UAF-200
-            window.gOpt(true);
-            window.stl(window.viz(window.rndr));
-            if (typeof window.kMnu === 'function') window.kMnu();
-          }
-        }catch(e){}
+        ensureVisible();
+        var idx = findStyleIndexByCode('UAF-200');
+        if (idx === null) idx = 0;
+        window.gN = idx;
+        tryRender(function(){
+          window.gOpt(true);
+          window.stl(window.viz(window.rndr));
+          if (typeof window.kMnu === 'function') window.kMnu();
+          return true;
+        });
       }
+
+      function flushQueue(){
+        if (!isReady()) return;
+        if (readyPoll) { clearInterval(readyPoll); readyPoll = null; }
+        while(cmdQueue.length){
+          var d = cmdQueue.shift();
+          try {
+            if (d.type === 'RESET_GATE') resetGate();
+            if (d.type === 'SET_GATE_STYLE') applyStyleByCode(d.code);
+          } catch(e) {}
+        }
+      }
+
+      // Start polling immediately; once Ultra finishes init we can apply queued commands.
+      readyPoll = setInterval(function(){
+        if (isReady()) flushQueue();
+      }, 100);
 
       window.addEventListener('message', function(ev){
         var d = ev.data || {};
         if (!d || !d.type) return;
-
-        // Wait until Ultra script has initialized.
-        if (!ready()){
-          var tries = 0;
-          var t = setInterval(function(){
-            tries++;
-            if (ready()){
-              clearInterval(t);
-              window.dispatchEvent(new MessageEvent('message', { data: d }));
-            }
-            if (tries > 100) clearInterval(t);
-          }, 100);
+        if (!isReady()) {
+          cmdQueue.push(d);
           return;
         }
-
-        if (d.type === 'SET_GATE_STYLE'){
-          applyStyleByCode(d.code);
-        }
-        if (d.type === 'RESET_GATE'){
-          resetGate();
-        }
+        if (d.type === 'SET_GATE_STYLE') applyStyleByCode(d.code);
+        if (d.type === 'RESET_GATE') resetGate();
       });
     })();
   </script>
