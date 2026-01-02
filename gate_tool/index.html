@@ -113,13 +113,15 @@
       var cmdQueue = [];
       var readyPoll = null;
 
-      function isReady(){
+function isReady(){
         return (
           typeof window.stlArr !== 'undefined' &&
           typeof window.gOpt === 'function' &&
           typeof window.stl === 'function' &&
           typeof window.viz === 'function' &&
-          typeof window.rndr === 'function'
+          typeof window.rndr === 'function' &&
+          // Add this check to ensure the 3D assets are loaded:
+          typeof window.pob12 !== 'undefined'
         );
       }
 
