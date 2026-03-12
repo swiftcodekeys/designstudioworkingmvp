@@ -220,7 +220,11 @@ var UnifiedCanvas = function(props) {
         });
 
         // ===========================================================
-        // POST CAPS — 6 instances at exact position+scale matrices
+        // POST CAPS — Ground Truth items #9-14 (all visible)
+        // hasClipping: false — NO clipping planes on these meshes
+        // #9,#10: outer posts (scale 1.545, x=±1.829)
+        // #11,#12: inner posts (x=±1.645)
+        // #13,#14: gate-top caps (x=±0.044, y=1.8773)
         // ===========================================================
         if (config.postCap) {
             loader.load(base + '3/' + config.postCap + '.json', function(geo) {
@@ -245,64 +249,81 @@ var UnifiedCanvas = function(props) {
         });
 
         // ===========================================================
-        // BOTTOM RAILS — 3 instances from rb model
+        // BOTTOM RAILS — Ground Truth items #17, #18, #19
+        // #19 (y=0.155): always visible
+        // #17 (y=0.727): Mid Rail — visible:false, tied to mdr
+        // #18 (y=0.3455): Extra Rail — visible:false, tied to xlr
         // ===========================================================
         var rbId = 'rb' + leafNum;
         loader.load(base + '1/' + rbId + '.json', function(geo) {
-            [M_RAIL_B0, M_RAIL_B1, M_RAIL_B2].forEach(function(m) {
-                var mesh = new THREE.Mesh(geo, makeMat());
-                snap(mesh, m);
-                gate.add(mesh);
-            });
+            // Bottom rail — always visible (item #19)
+            var meshB = new THREE.Mesh(geo, makeMat());
+            snap(meshB, M_RAIL_B2);
+            gate.add(meshB);
+
+            // Mid Rail (item #17) — visible:false by default
+            if (config.accessories && config.accessories.mdr) {
+                var meshM = new THREE.Mesh(geo, makeMat());
+                snap(meshM, M_RAIL_B0);
+                gate.add(meshM);
+            }
+
+            // Extra Lower Rail (item #18) — visible:false by default
+            if (config.accessories && config.accessories.xlr) {
+                var meshX = new THREE.Mesh(geo, makeMat());
+                snap(meshX, M_RAIL_B1);
+                gate.add(meshX);
+            }
         });
 
         // ===========================================================
-        // PICKETS — ONLY 'e' (even) variant. No 'o', no 'x'.
+        // PICKETS — Ground Truth render plan enforcement
+        // 'e' (even) + 'o' (odd) = standard picket set (always)
+        // 'x' = Residential/Pro-spacing variant (visible:false in JSON)
+        //   → Only loaded when Residential Spacing (res) is active
+        // All use hasClipping: true per render plan
         // Clip tops: normal (0,1,0) constant -0.735 → above y=0.735
         // Clip bottoms: normal (0,-1,0) constant 0.735 → below y=0.735
         // ===========================================================
-        var ptE = 'pt' + leafNum + archId + 'e';
-        var pbE = 'pb' + leafNum + 'e';
 
-        loader.load(base + '2/' + ptE + '.json', function(geo) {
+        // 'e' (even pickets) — always loaded
+        loader.load(base + '2/pt' + leafNum + archId + 'e.json', function(geo) {
             var mesh = new THREE.Mesh(geo, makeClipMat(clips.pt));
             snap(mesh, M_PICKET_TOP);
             gate.add(mesh);
         });
-        loader.load(base + '2/' + pbE + '.json', function(geo) {
+        loader.load(base + '2/pb' + leafNum + 'e.json', function(geo) {
             var mesh = new THREE.Mesh(geo, makeClipMat(clips.pb));
             snap(mesh, M_IDENTITY);
             gate.add(mesh);
         });
 
-        // ===========================================================
-        // STILE DIAGNOSTIC — 'x' variant in RED to test visibility
-        // These should be the thick frame bars at x: ±0.044, ±1.645
-        // If red bars appear → these are the inner stiles
-        // ===========================================================
-        var ptX = 'pt' + leafNum + archId + 'x';
-        var pbX = 'pb' + leafNum + 'x';
-        var redMat = function(plane) {
-            return new THREE.MeshStandardMaterial({
-                color: 0xff0000,
-                roughness: 0.3,
-                metalness: 0.5,
-                shading: THREE.FlatShading,
-                side: THREE.DoubleSide,
-                clippingPlanes: [plane],
-            });
-        };
-
-        loader.load(base + '2/' + ptX + '.json', function(geo) {
-            var mesh = new THREE.Mesh(geo, redMat(clips.pt));
+        // 'o' (odd pickets) — always loaded
+        loader.load(base + '2/pt' + leafNum + archId + 'o.json', function(geo) {
+            var mesh = new THREE.Mesh(geo, makeClipMat(clips.pt));
             snap(mesh, M_PICKET_TOP);
             gate.add(mesh);
         });
-        loader.load(base + '2/' + pbX + '.json', function(geo) {
-            var mesh = new THREE.Mesh(geo, redMat(clips.pb));
+        loader.load(base + '2/pb' + leafNum + 'o.json', function(geo) {
+            var mesh = new THREE.Mesh(geo, makeClipMat(clips.pb));
             snap(mesh, M_IDENTITY);
             gate.add(mesh);
         });
+
+        // 'x' (Residential/Pro-spacing pickets) — visible:false in JSON
+        // Only loaded when Residential Spacing accessory is active
+        if (config.accessories && config.accessories.res) {
+            loader.load(base + '2/pt' + leafNum + archId + 'x.json', function(geo) {
+                var mesh = new THREE.Mesh(geo, makeClipMat(clips.pt));
+                snap(mesh, M_PICKET_TOP);
+                gate.add(mesh);
+            });
+            loader.load(base + '2/pb' + leafNum + 'x.json', function(geo) {
+                var mesh = new THREE.Mesh(geo, makeClipMat(clips.pb));
+                snap(mesh, M_IDENTITY);
+                gate.add(mesh);
+            });
+        }
 
         // ===========================================================
         // UPPER FILLER RAIL (optional accessory)
