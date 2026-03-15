@@ -13,15 +13,17 @@
 import {
     snap,
     M_HINGE, M_IDENTITY, M_CAPS, CAP_INNER_Y,
-    M_RAIL_T0, M_RAIL_T1, M_RAIL_B0, M_RAIL_B1, M_RAIL_B2, M_RAIL_PUPPY,
-    M_PICKET_TOP, CENTER_GAP,
+    LEAF_TRANSFORMS, M_RAIL_PUPPY,
+    CENTER_GAP,
     CLIP_POST, CLIP_PO23, CLIP_PT, CLIP_PB,
     CLIP_PB_PUPPY_STD, CLIP_PB_PUPPY_CLP,
     ACCENT_CIRCLE_Y, ACCENT_BUTTERFLY_Y,
     ACCENT_CIRCLE_BOTTOM_Y, ACCENT_BUTTERFLY_BOTTOM_Y,
     ACCENT_CIRCLE_X, ACCENT_BUTTERFLY_X,
+    FINIAL_X_LEAF1, FINIAL_X_LEAF2,
+    FINIAL_BASE_Y, FINIAL_ARCH_OFFSETS,
 } from './spatialConstants';
-import { getModelPath } from './configData';
+import { getModelPath, FENCE_STYLES } from './configData';
 
 function GateRenderer(container) {
     var THREE = window.THREE;
@@ -130,7 +132,15 @@ GateRenderer.prototype.buildGate = function(config) {
 
     this._lastConfig = config;
     var archId = config.arch || 'e';
-    var isDoubleLeaf = (config.leaf === '2');
+    var leaf = config.leaf || '2';
+    var isDoubleLeaf = (leaf === '2');
+
+    // Per-leaf spatial transforms (extraction-verified from live Ultra)
+    var lt = LEAF_TRANSFORMS[leaf] || LEAF_TRANSFORMS['2'];
+
+    // Look up style metadata for finial/stagger decisions
+    var styleDef = FENCE_STYLES.find(function(s) { return s.id === config.styleId; });
+    var hasFinials = styleDef ? styleDef.hasFinials : false;
 
     // Arch-specific clipping (verified against legacy ultra_dsg_min.js)
     clips.post.constant = CLIP_POST;
@@ -226,30 +236,30 @@ GateRenderer.prototype.buildGate = function(config) {
         });
     }
 
-    // TOP RAILS
+    // TOP RAILS — per-leaf Y positions
     loader.load(getModelPath('railTop', config), function(geo) {
-        [M_RAIL_T0, M_RAIL_T1].forEach(function(m) {
+        [lt.railT0, lt.railT1].forEach(function(m) {
             var mesh = new THREE.Mesh(geo, makeMat());
             snap(mesh, m);
             gate.add(mesh);
         });
     });
 
-    // BOTTOM RAILS
+    // BOTTOM RAILS — per-leaf Y positions
     loader.load(getModelPath('railBot', config), function(geo) {
         var meshB = new THREE.Mesh(geo, makeMat());
-        snap(meshB, M_RAIL_B2);
+        snap(meshB, lt.railB2);
         gate.add(meshB);
 
         if (config.accessories && config.accessories.mdr) {
             var meshM = new THREE.Mesh(geo, makeMat());
-            snap(meshM, M_RAIL_B0);
+            snap(meshM, lt.railB0);
             gate.add(meshM);
         }
 
         if (config.accessories && config.accessories.xlr) {
             var meshX = new THREE.Mesh(geo, makeMat());
-            snap(meshX, M_RAIL_B1);
+            snap(meshX, lt.railB1);
             gate.add(meshX);
         }
 
@@ -262,10 +272,14 @@ GateRenderer.prototype.buildGate = function(config) {
         }
     });
 
-    // PICKETS — even
+    // PICKETS — per-leaf Y positions
+    // Odd picket top: Vanguard (leaf=2 + hasFinials) staggers odd pickets lower
+    var ptOddTransform = (hasFinials && lt.picketTopOddStagger) ? lt.picketTopOddStagger : lt.picketTop;
+
+    // Even pickets
     loader.load(getModelPath('ptEven', config), function(geo) {
         var mesh = new THREE.Mesh(geo, makeClipMat(clips.pt));
-        snap(mesh, M_PICKET_TOP);
+        snap(mesh, lt.picketTop);
         gate.add(mesh);
     });
     loader.load(getModelPath('pbEven', config), function(geo) {
@@ -274,10 +288,10 @@ GateRenderer.prototype.buildGate = function(config) {
         gate.add(mesh);
     });
 
-    // PICKETS — odd
+    // Odd pickets
     loader.load(getModelPath('ptOdd', config), function(geo) {
         var mesh = new THREE.Mesh(geo, makeClipMat(clips.pt));
-        snap(mesh, M_PICKET_TOP);
+        snap(mesh, ptOddTransform);
         gate.add(mesh);
     });
     loader.load(getModelPath('pbOdd', config), function(geo) {
@@ -286,19 +300,18 @@ GateRenderer.prototype.buildGate = function(config) {
         gate.add(mesh);
     });
 
-    // PICKETS — residential spacing (pbRes uses separate clip for puppy support)
-    if (config.accessories && config.accessories.res) {
-        loader.load(getModelPath('ptRes', config), function(geo) {
-            var mesh = new THREE.Mesh(geo, makeClipMat(clips.pt));
-            snap(mesh, M_PICKET_TOP);
-            gate.add(mesh);
-        });
-        loader.load(getModelPath('pbRes', config), function(geo) {
-            var mesh = new THREE.Mesh(geo, makeClipMat(clips.pbRes));
-            snap(mesh, M_IDENTITY);
-            gate.add(mesh);
-        });
-    }
+    // Res pickets — Ultra always loads these (verified from scene extraction)
+    // pbRes uses separate clip plane for puppy support
+    loader.load(getModelPath('ptRes', config), function(geo) {
+        var mesh = new THREE.Mesh(geo, makeClipMat(clips.pt));
+        snap(mesh, lt.picketTop);
+        gate.add(mesh);
+    });
+    loader.load(getModelPath('pbRes', config), function(geo) {
+        var mesh = new THREE.Mesh(geo, makeClipMat(clips.pbRes));
+        snap(mesh, M_IDENTITY);
+        gate.add(mesh);
+    });
 
     // UPPER FILLER RAIL
     if (config.accessories && config.accessories.ufr) {
@@ -309,12 +322,30 @@ GateRenderer.prototype.buildGate = function(config) {
         });
     }
 
-    // FINIALS
-    if (config.finial) {
+    // FINIALS — per-picket instancing with arch-following Y
+    // Extraction-verified: leaf=1 gets 13/side at butterfly X spacing,
+    // leaf=2 gets 7/side at every-other-picket spacing.
+    // Y position = base Y + arch offset at each X position.
+    if (config.finial && hasFinials) {
+        var finialXPositions = (leaf === '1') ? FINIAL_X_LEAF1 : FINIAL_X_LEAF2;
+        var finialBaseY = FINIAL_BASE_Y[leaf] || FINIAL_BASE_Y['2'];
+        var archOffsets = FINIAL_ARCH_OFFSETS[archId] || FINIAL_ARCH_OFFSETS.s;
+
         loader.load(getModelPath('finial', config), function(geo) {
-            var mesh = new THREE.Mesh(geo, makeMat());
-            snap(mesh, [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,1.584,0,1]);
-            gate.add(mesh);
+            finialXPositions.forEach(function(x, idx) {
+                // For leaf=2, use every-other arch offset (indices 0,2,4,...,12)
+                var offsetIdx = (leaf === '1') ? idx : idx * 2;
+                var archY = (offsetIdx < archOffsets.length) ? archOffsets[offsetIdx] : 0;
+                var y = finialBaseY + archY;
+                // Place at +x and -x (both sides)
+                var meshR = new THREE.Mesh(geo, makeMat());
+                snap(meshR, [1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,0,1]);
+                gate.add(meshR);
+
+                var meshL = new THREE.Mesh(geo, makeMat());
+                snap(meshL, [1,0,0,0, 0,1,0,0, 0,0,1,0, -x,y,0,1]);
+                gate.add(meshL);
+            });
         });
     }
 

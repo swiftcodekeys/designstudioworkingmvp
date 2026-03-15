@@ -45,13 +45,37 @@ export var M_CAPS = [
     [1,0,0,0, 0,1,0,0, 0,0,1,0, 0.044,1.5725,0,1],
 ];
 
-export var M_RAIL_T0 = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,1.489,0,1];
-export var M_RAIL_T1 = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,1.2985,0,1];
-export var M_RAIL_B0 = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0.727,0,1];
-export var M_RAIL_B1 = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0.34550000000000003,0,1];
-export var M_RAIL_B2 = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0.155,0,1];
+// ---- PER-LEAF TRANSFORMS (from live Ultra scene extraction) ----
+// Leaf=2 (flat family: Horizon, Vanguard, Haven) — original constants
+// Leaf=1 (spear family: Charleston, Savannah) — different rail/picket Y positions
+export var LEAF_TRANSFORMS = {
+    '2': {
+        railT0:    [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,1.489,0,1],
+        railT1:    [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,1.2985,0,1],
+        railB0:    [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0.727,0,1],     // mid rail
+        railB1:    [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0.3455,0,1],    // extra rail
+        railB2:    [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0.155,0,1],     // bottom rail
+        picketTop: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,-0.3052,0,1],   // even/res
+        picketTopOddStagger: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,-0.5102,0,1], // Vanguard odd
+    },
+    '1': {
+        railT0:    [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,1.337,0,1],
+        railT1:    [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,1.1465,0,1],
+        railB0:    [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0.651,0,1],     // mid rail
+        railB1:    [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0.3455,0,1],    // extra rail (same)
+        railB2:    [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0.155,0,1],     // bottom rail (same)
+        picketTop: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,-0.4572,0,1],   // all pickets
+        picketTopOddStagger: null, // leaf=1 has no stagger
+    },
+};
 
-export var M_PICKET_TOP = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,-0.30519999999999997,0,1];
+// Legacy aliases — kept for any code that still references them directly
+export var M_RAIL_T0 = LEAF_TRANSFORMS['2'].railT0;
+export var M_RAIL_T1 = LEAF_TRANSFORMS['2'].railT1;
+export var M_RAIL_B0 = LEAF_TRANSFORMS['2'].railB0;
+export var M_RAIL_B1 = LEAF_TRANSFORMS['2'].railB1;
+export var M_RAIL_B2 = LEAF_TRANSFORMS['2'].railB2;
+export var M_PICKET_TOP = LEAF_TRANSFORMS['2'].picketTop;
 
 // Center gap: Phase 3 extraction (center_gap_baseline_60in.json,
 // center_gap_baseline_72in.json) proves Ultra's edge-to-edge gap is 0.018.
@@ -131,3 +155,45 @@ export var ACCENT_BUTTERFLY_X = (function() {
     }
     return pos;
 })();
+
+// ---- PER-PICKET FINIAL POSITIONS (from live Ultra scene extraction) ----
+// Finial X positions differ by leaf type:
+//   Leaf=1 (spear family): 13 per side at 0.111 spacing from 0.177 (every picket)
+//   Leaf=2 w/ spears (Vanguard): 7 per side at 0.222 spacing from 0.177 (every other picket)
+
+// Leaf=1 finial X: same positions as butterfly accents (13/side = 26 total)
+export var FINIAL_X_LEAF1 = (function() {
+    var pos = [];
+    for (var i = 0; i < 13; i++) {
+        var x = +(0.177 + i * 0.111).toFixed(3);
+        pos.push(x);  // positive only; renderer mirrors to ±
+    }
+    return pos;
+})();
+
+// Leaf=2 finial X: every other picket (7/side = 14 total)
+export var FINIAL_X_LEAF2 = (function() {
+    var pos = [];
+    for (var i = 0; i < 7; i++) {
+        var x = +(0.177 + i * 0.222).toFixed(3);
+        pos.push(x);
+    }
+    return pos;
+})();
+
+// Finial base Y (Standard arch = flat, no curve)
+export var FINIAL_BASE_Y = {
+    '1': 1.412,   // leaf=1 (Charleston, Savannah)
+    '2': 1.359,   // leaf=2 (Vanguard)
+};
+
+// Per-arch finial Y offsets at each of the 13 X positions (from 0.177 to 1.511).
+// Extracted from live Ultra Charleston (UAS-100) on each arch style.
+// Standard = flat baseline (no offsets). Estate/Arched/Royal follow arch curves.
+// For leaf=2 styles (Vanguard), use every other offset (indices 0,2,4,...,12).
+export var FINIAL_ARCH_OFFSETS = {
+    s: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    e: [0.298, 0.286, 0.270, 0.248, 0.220, 0.185, 0.146, 0.107, 0.073, 0.047, 0.026, 0.012, 0.004],
+    a: [0.301, 0.297, 0.290, 0.280, 0.268, 0.253, 0.235, 0.214, 0.189, 0.160, 0.127, 0.089, 0.045],
+    r: [-0.296, -0.292, -0.285, -0.275, -0.263, -0.248, -0.230, -0.209, -0.184, -0.155, -0.122, -0.084, -0.040],
+};
