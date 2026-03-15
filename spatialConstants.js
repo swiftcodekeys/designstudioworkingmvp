@@ -94,3 +94,39 @@ export var CLIP_PO23 = {
     s: 1.5875,   // Standard (same as main posts)
     r: 1.2827,   // Royal
 };
+
+// ---- PUPPY PANEL (from puppy_positions_standard.json, puppy_truth_manifest.json) ----
+// Puppy Standard: repositions a rail to Y=0.4598, tightens res picket bottom clip
+// Puppy Classic Plugged: same + adds 28 finial meshes + even tighter clip
+export var M_RAIL_PUPPY = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0.4598,0,1];
+export var CLIP_PB_PUPPY_STD = 0.6598;   // Puppy Standard res picket bottom clip
+export var CLIP_PB_PUPPY_CLP = 0.477;    // Puppy Classic Plugged res picket bottom clip
+
+// ---- PER-PICKET ACCENT POSITIONS (from accent_positions_circle.json, accent_positions_butterfly.json) ----
+// Circle: 14 per side at 0.111 spacing starting at 0.122, Y=1.397
+// Butterfly/Scroll: 13 per side at 0.111 spacing starting at 0.177, Y=1.363
+// Both verified consistent across all positions in extraction data
+
+export var ACCENT_CIRCLE_Y = 1.397;
+export var ACCENT_BUTTERFLY_Y = 1.363;
+export var ACCENT_BOTTOM_Y = 0.19;
+
+// Circle accent X positions (14 per side = 28 total)
+export var ACCENT_CIRCLE_X = (function() {
+    var pos = [];
+    for (var i = 0; i < 14; i++) {
+        var x = +(0.122 + i * 0.111).toFixed(3);
+        pos.push(-x, x);
+    }
+    return pos;
+})();
+
+// Butterfly/Scroll accent X positions (13 per side = 26 total)
+export var ACCENT_BUTTERFLY_X = (function() {
+    var pos = [];
+    for (var i = 0; i < 13; i++) {
+        var x = +(0.177 + i * 0.111).toFixed(3);
+        pos.push(-x, x);
+    }
+    return pos;
+})();

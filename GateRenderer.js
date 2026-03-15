@@ -13,9 +13,12 @@
 import {
     snap,
     M_HINGE, M_IDENTITY, M_CAPS, CAP_INNER_Y,
-    M_RAIL_T0, M_RAIL_T1, M_RAIL_B0, M_RAIL_B1, M_RAIL_B2,
+    M_RAIL_T0, M_RAIL_T1, M_RAIL_B0, M_RAIL_B1, M_RAIL_B2, M_RAIL_PUPPY,
     M_PICKET_TOP, CENTER_GAP,
     CLIP_POST, CLIP_PO23, CLIP_PT, CLIP_PB,
+    CLIP_PB_PUPPY_STD, CLIP_PB_PUPPY_CLP,
+    ACCENT_CIRCLE_Y, ACCENT_BUTTERFLY_Y, ACCENT_BOTTOM_Y,
+    ACCENT_BUTTERFLY_X,
 } from './spatialConstants';
 import { getModelPath } from './configData';
 
@@ -58,6 +61,7 @@ function GateRenderer(container) {
         post23: new THREE.Plane(new THREE.Vector3(0, -1, 0), CLIP_PO23.e),
         pt:     new THREE.Plane(new THREE.Vector3(0,  1, 0), CLIP_PT),
         pb:     new THREE.Plane(new THREE.Vector3(0, -1, 0), CLIP_PB),
+        pbRes:  new THREE.Plane(new THREE.Vector3(0, -1, 0), CLIP_PB),  // separate for puppy
     };
 
     // Gate group
@@ -124,6 +128,14 @@ GateRenderer.prototype.buildGate = function(config) {
     // Arch-specific clipping (verified against legacy ultra_dsg_min.js)
     clips.post.constant = CLIP_POST;
     clips.post23.constant = CLIP_PO23[archId] || CLIP_PO23.e;
+
+    // Puppy clip: tighten res picket bottom when puppy is active
+    var hasPuppy = config.accessories && config.accessories.pup;
+    if (hasPuppy) {
+        clips.pbRes.constant = CLIP_PB_PUPPY_STD;
+    } else {
+        clips.pbRes.constant = CLIP_PB;
+    }
 
     var color = config.color || { threeHex: 0x080808 };
 
@@ -234,8 +246,13 @@ GateRenderer.prototype.buildGate = function(config) {
             gate.add(meshX);
         }
 
-        // PUPPY — fake rail removed. Ultra uses clipping planes, not a mesh.
-        // Puppy clipping implementation is deferred (not in this batch).
+        // PUPPY RAIL — extraction truth: puppy_positions_standard.json
+        // Adds a rail at Y=0.4598 to block the bottom gap
+        if (hasPuppy) {
+            var meshP = new THREE.Mesh(geo, makeMat());
+            snap(meshP, M_RAIL_PUPPY);
+            gate.add(meshP);
+        }
     });
 
     // PICKETS — even
@@ -262,7 +279,7 @@ GateRenderer.prototype.buildGate = function(config) {
         gate.add(mesh);
     });
 
-    // PICKETS — residential spacing
+    // PICKETS — residential spacing (pbRes uses separate clip for puppy support)
     if (config.accessories && config.accessories.res) {
         loader.load(getModelPath('ptRes', config), function(geo) {
             var mesh = new THREE.Mesh(geo, makeClipMat(clips.pt));
@@ -270,7 +287,7 @@ GateRenderer.prototype.buildGate = function(config) {
             gate.add(mesh);
         });
         loader.load(getModelPath('pbRes', config), function(geo) {
-            var mesh = new THREE.Mesh(geo, makeClipMat(clips.pb));
+            var mesh = new THREE.Mesh(geo, makeClipMat(clips.pbRes));
             snap(mesh, M_IDENTITY);
             gate.add(mesh);
         });
@@ -306,36 +323,47 @@ GateRenderer.prototype.buildGate = function(config) {
                 });
             });
         }
-        // TOP SCROLL — single accent at top rail height
+        // TOP SCROLL — per-picket instancing at butterfly X positions, Y=1.397
+        // Extraction truth: accent_positions_circle.json (28 meshes at top rail height)
+        // Uses butterfly X grid (26 positions) — scroll shares these positions per accent_transform_manifest.json
         if (config.accessories.tcr) {
             loader.load(getModelPath('scroll', config), function(geo) {
-                var mesh = new THREE.Mesh(geo, makeMat());
-                snap(mesh, [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,1.397,0,1]);
-                gate.add(mesh);
+                ACCENT_BUTTERFLY_X.forEach(function(x) {
+                    var mesh = new THREE.Mesh(geo, makeMat());
+                    snap(mesh, [1,0,0,0, 0,1,0,0, 0,0,1,0, x,ACCENT_CIRCLE_Y,0,1]);
+                    gate.add(mesh);
+                });
             });
         }
-        // BOTTOM SCROLL — single accent at bottom rail height
+        // BOTTOM SCROLL — per-picket instancing at butterfly X positions, Y=0.19
         if (config.accessories.bcr) {
             loader.load(getModelPath('scroll', config), function(geo) {
-                var mesh = new THREE.Mesh(geo, makeMat());
-                snap(mesh, [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0.19,0,1]);
-                gate.add(mesh);
+                ACCENT_BUTTERFLY_X.forEach(function(x) {
+                    var mesh = new THREE.Mesh(geo, makeMat());
+                    snap(mesh, [1,0,0,0, 0,1,0,0, 0,0,1,0, x,ACCENT_BOTTOM_Y,0,1]);
+                    gate.add(mesh);
+                });
             });
         }
-        // TOP BUTTERFLY — single accent at top rail height
+        // TOP BUTTERFLY — per-picket instancing at butterfly X positions, Y=1.363
+        // Extraction truth: accent_positions_butterfly.json (26 meshes)
         if (config.accessories.tbu) {
             loader.load(getModelPath('butterfly', config), function(geo) {
-                var mesh = new THREE.Mesh(geo, makeMat());
-                snap(mesh, [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,1.397,0,1]);
-                gate.add(mesh);
+                ACCENT_BUTTERFLY_X.forEach(function(x) {
+                    var mesh = new THREE.Mesh(geo, makeMat());
+                    snap(mesh, [1,0,0,0, 0,1,0,0, 0,0,1,0, x,ACCENT_BUTTERFLY_Y,0,1]);
+                    gate.add(mesh);
+                });
             });
         }
-        // BOTTOM BUTTERFLY — single accent at bottom rail height
+        // BOTTOM BUTTERFLY — per-picket instancing at butterfly X positions, Y=0.19
         if (config.accessories.bbu) {
             loader.load(getModelPath('butterfly', config), function(geo) {
-                var mesh = new THREE.Mesh(geo, makeMat());
-                snap(mesh, [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0.19,0,1]);
-                gate.add(mesh);
+                ACCENT_BUTTERFLY_X.forEach(function(x) {
+                    var mesh = new THREE.Mesh(geo, makeMat());
+                    snap(mesh, [1,0,0,0, 0,1,0,0, 0,0,1,0, x,ACCENT_BOTTOM_Y,0,1]);
+                    gate.add(mesh);
+                });
             });
         }
     }
