@@ -17,8 +17,9 @@ import {
     M_PICKET_TOP, CENTER_GAP,
     CLIP_POST, CLIP_PO23, CLIP_PT, CLIP_PB,
     CLIP_PB_PUPPY_STD, CLIP_PB_PUPPY_CLP,
-    ACCENT_CIRCLE_Y, ACCENT_BUTTERFLY_Y, ACCENT_BOTTOM_Y,
-    ACCENT_BUTTERFLY_X,
+    ACCENT_CIRCLE_Y, ACCENT_BUTTERFLY_Y,
+    ACCENT_CIRCLE_BOTTOM_Y, ACCENT_BUTTERFLY_BOTTOM_Y,
+    ACCENT_CIRCLE_X, ACCENT_BUTTERFLY_X,
 } from './spatialConstants';
 import { getModelPath } from './configData';
 
@@ -32,6 +33,7 @@ function GateRenderer(container) {
 
     // Scene
     this.scene = new THREE.Scene();
+    window._gateScene = this.scene;  // expose for regression testing
 
     // Camera — exact legacy values
     this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
@@ -56,12 +58,17 @@ function GateRenderer(container) {
     this.scene.add(dirLight);
 
     // Clipping planes
+    // CRITICAL: Post clips use normalized normals (0, -1, 0) — Ultra does the same.
+    // Picket clips use NON-normalized normals (0, ±0.735, 0) — matching Ultra exactly.
+    // Three.js does NOT auto-normalize plane normals, so the effective clip position
+    // is constant/|normal|. With |normal|=0.735 and constant=0.735, clip is at y=1.0.
+    // Using normalized (0,-1,0) with same constant would clip at y=0.735 — WRONG.
     this.clips = {
         post:   new THREE.Plane(new THREE.Vector3(0, -1, 0), CLIP_POST),
         post23: new THREE.Plane(new THREE.Vector3(0, -1, 0), CLIP_PO23.e),
-        pt:     new THREE.Plane(new THREE.Vector3(0,  1, 0), CLIP_PT),
-        pb:     new THREE.Plane(new THREE.Vector3(0, -1, 0), CLIP_PB),
-        pbRes:  new THREE.Plane(new THREE.Vector3(0, -1, 0), CLIP_PB),  // separate for puppy
+        pt:     new THREE.Plane(new THREE.Vector3(0,  0.735, 0), CLIP_PT),
+        pb:     new THREE.Plane(new THREE.Vector3(0, -0.735, 0), CLIP_PB),
+        pbRes:  new THREE.Plane(new THREE.Vector3(0, -0.735, 0), CLIP_PB),  // separate for puppy
     };
 
     // Gate group
@@ -279,19 +286,18 @@ GateRenderer.prototype.buildGate = function(config) {
         gate.add(mesh);
     });
 
-    // PICKETS — residential spacing (pbRes uses separate clip for puppy support)
-    if (config.accessories && config.accessories.res) {
-        loader.load(getModelPath('ptRes', config), function(geo) {
-            var mesh = new THREE.Mesh(geo, makeClipMat(clips.pt));
-            snap(mesh, M_PICKET_TOP);
-            gate.add(mesh);
-        });
-        loader.load(getModelPath('pbRes', config), function(geo) {
-            var mesh = new THREE.Mesh(geo, makeClipMat(clips.pbRes));
-            snap(mesh, M_IDENTITY);
-            gate.add(mesh);
-        });
-    }
+    // PICKETS — residential spacing always loaded (Ultra default)
+    // pbRes uses separate clip plane for puppy support
+    loader.load(getModelPath('ptRes', config), function(geo) {
+        var mesh = new THREE.Mesh(geo, makeClipMat(clips.pt));
+        snap(mesh, M_PICKET_TOP);
+        gate.add(mesh);
+    });
+    loader.load(getModelPath('pbRes', config), function(geo) {
+        var mesh = new THREE.Mesh(geo, makeClipMat(clips.pbRes));
+        snap(mesh, M_IDENTITY);
+        gate.add(mesh);
+    });
 
     // UPPER FILLER RAIL
     if (config.accessories && config.accessories.ufr) {
@@ -313,7 +319,7 @@ GateRenderer.prototype.buildGate = function(config) {
 
     // ACCESSORIES
     if (config.accessories) {
-        // SCROLL — extraction truth: accent_positions_scroll.json
+        // SCROLL — 2 meshes at ±0.844, Y=0.727 (verified: Ultra "Scroll" accent)
         if (config.accessories.scr) {
             loader.load(getModelPath('scroll', config), function(geo) {
                 [[-0.844, 0.727], [0.844, 0.727]].forEach(function(pos) {
@@ -323,30 +329,30 @@ GateRenderer.prototype.buildGate = function(config) {
                 });
             });
         }
-        // TOP SCROLL — per-picket instancing at butterfly X positions, Y=1.397
-        // Extraction truth: accent_positions_circle.json (28 meshes at top rail height)
-        // Uses butterfly X grid (26 positions) — scroll shares these positions per accent_transform_manifest.json
+        // CIRCLE (top) — 28 circle meshes (14/side), CIRCLE_X positions, Y=1.397
+        // Verified: Ultra "Circle" accent, Standard arch, 292v model acc.json
         if (config.accessories.tcr) {
-            loader.load(getModelPath('scroll', config), function(geo) {
-                ACCENT_BUTTERFLY_X.forEach(function(x) {
+            loader.load(getModelPath('circle', config), function(geo) {
+                ACCENT_CIRCLE_X.forEach(function(x) {
                     var mesh = new THREE.Mesh(geo, makeMat());
                     snap(mesh, [1,0,0,0, 0,1,0,0, 0,0,1,0, x,ACCENT_CIRCLE_Y,0,1]);
                     gate.add(mesh);
                 });
             });
         }
-        // BOTTOM SCROLL — per-picket instancing at butterfly X positions, Y=0.19
+        // CIRCLES AT BASE — 28 circle meshes, CIRCLE_X positions, Y=0.19
+        // Verified: Ultra "Circles at Base" accent
         if (config.accessories.bcr) {
-            loader.load(getModelPath('scroll', config), function(geo) {
-                ACCENT_BUTTERFLY_X.forEach(function(x) {
+            loader.load(getModelPath('circle', config), function(geo) {
+                ACCENT_CIRCLE_X.forEach(function(x) {
                     var mesh = new THREE.Mesh(geo, makeMat());
-                    snap(mesh, [1,0,0,0, 0,1,0,0, 0,0,1,0, x,ACCENT_BOTTOM_Y,0,1]);
+                    snap(mesh, [1,0,0,0, 0,1,0,0, 0,0,1,0, x,ACCENT_CIRCLE_BOTTOM_Y,0,1]);
                     gate.add(mesh);
                 });
             });
         }
-        // TOP BUTTERFLY — per-picket instancing at butterfly X positions, Y=1.363
-        // Extraction truth: accent_positions_butterfly.json (26 meshes)
+        // BUTTERFLY (top) — 26 butterfly meshes (13/side), BUTTERFLY_X positions, Y=1.363
+        // Verified: Ultra "Butterfly" accent, Standard arch, 952v model acb.json
         if (config.accessories.tbu) {
             loader.load(getModelPath('butterfly', config), function(geo) {
                 ACCENT_BUTTERFLY_X.forEach(function(x) {
@@ -356,12 +362,13 @@ GateRenderer.prototype.buildGate = function(config) {
                 });
             });
         }
-        // BOTTOM BUTTERFLY — per-picket instancing at butterfly X positions, Y=0.19
+        // BUTTERFLIES AT BASE — 26 butterfly meshes, BUTTERFLY_X positions, Y=0.2185
+        // Verified: Ultra "Butterflies at Base" accent (Y differs from circles!)
         if (config.accessories.bbu) {
             loader.load(getModelPath('butterfly', config), function(geo) {
                 ACCENT_BUTTERFLY_X.forEach(function(x) {
                     var mesh = new THREE.Mesh(geo, makeMat());
-                    snap(mesh, [1,0,0,0, 0,1,0,0, 0,0,1,0, x,ACCENT_BOTTOM_Y,0,1]);
+                    snap(mesh, [1,0,0,0, 0,1,0,0, 0,0,1,0, x,ACCENT_BUTTERFLY_BOTTOM_Y,0,1]);
                     gate.add(mesh);
                 });
             });

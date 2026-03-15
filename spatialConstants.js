@@ -109,7 +109,8 @@ export var CLIP_PB_PUPPY_CLP = 0.477;    // Puppy Classic Plugged res picket bot
 
 export var ACCENT_CIRCLE_Y = 1.397;
 export var ACCENT_BUTTERFLY_Y = 1.363;
-export var ACCENT_BOTTOM_Y = 0.19;
+export var ACCENT_CIRCLE_BOTTOM_Y = 0.19;
+export var ACCENT_BUTTERFLY_BOTTOM_Y = 0.2185;
 
 // Circle accent X positions (14 per side = 28 total)
 export var ACCENT_CIRCLE_X = (function() {
