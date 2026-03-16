@@ -156,44 +156,49 @@ export var ACCENT_BUTTERFLY_X = (function() {
     return pos;
 })();
 
-// ---- PER-PICKET FINIAL POSITIONS (from live Ultra scene extraction) ----
-// Finial X positions differ by leaf type:
-//   Leaf=1 (spear family): 13 per side at 0.111 spacing from 0.177 (every picket)
-//   Leaf=2 w/ spears (Vanguard): 7 per side at 0.222 spacing from 0.177 (every other picket)
+// ---- FINIAL POSITIONS (exact XYZ from Ultra's global position arrays) ----
+// Ultra stores finial positions as 'x,y,z*x,y,z*...' strings keyed by
+// style prefix + leaf + arch:
+//   b{leaf}{arch}     — spear family (Charleston, Savannah)
+//   f250_{leaf}{arch} — Vanguard (flat w/ spears)
+//
+// These are ABSOLUTE positions, not computed. Each entry is [x, y, z].
+// The renderer places one mesh at each position — no mirroring needed,
+// both sides are included in the data.
 
-// Leaf=1 finial X: same positions as butterfly accents (13/side = 26 total)
-export var FINIAL_X_LEAF1 = (function() {
-    var pos = [];
-    for (var i = 0; i < 13; i++) {
-        var x = +(0.177 + i * 0.111).toFixed(3);
-        pos.push(x);  // positive only; renderer mirrors to ±
-    }
-    return pos;
-})();
+function parseFinialPositions(str) {
+    return str.split('*').map(function(s) {
+        var p = s.split(',');
+        return [parseFloat(p[0]), parseFloat(p[1]), parseFloat(p[2])];
+    });
+}
 
-// Leaf=2 finial X: every other picket (7/side = 14 total)
-export var FINIAL_X_LEAF2 = (function() {
-    var pos = [];
-    for (var i = 0; i < 7; i++) {
-        var x = +(0.177 + i * 0.222).toFixed(3);
-        pos.push(x);
-    }
-    return pos;
-})();
+// Spear family: leaf=1 (Charleston, Savannah) — 29 positions (15 left + 14 right)
+var _b1s = '1.556,0,-0*1.445,0,-0*1.334,0,-0*1.222,0,-0*1.111,0,-0*1,0,-0*0.889,0,-0*0.778,0,-0*0.667,0,-0*0.556,0,-0*0.444,0,-0*0.333,0,-0*0.222,0,-0*0.111,0,-0*0,0,-0*-0.111,0,-0*-0.333,0,-0*-0.222,0,-0*-0.556,0,-0*-0.444,0,-0*-0.778,0,-0*-0.667,0,-0*-1,0,-0*-0.889,0,-0*-1.222,0,-0*-1.111,0,-0*-1.445,0,-0*-1.334,0,-0*-1.556,0,-0';
+var _b1e = '0,0.305,-0*-0.111,0.302,-0*-0.333,0.281,-0*-0.222,0.294,-0*-0.556,0.24,-0*-0.444,0.263,-0*-0.778,0.176,-0*-0.667,0.211,-0*-1,0.1,-0*-0.889,0.137,-0*-1.222,0.044,-0*-1.111,0.068,-0*-1.445,0.011,-0*-1.334,0.025,-0*-1.556,0.003,-0*0.111,0.302,-0*0.333,0.281,-0*0.222,0.294,-0*0.556,0.24,-0*0.444,0.263,-0*0.778,0.176,-0*0.667,0.211,-0*1,0.1,-0*0.889,0.137,-0*1.222,0.044,-0*1.111,0.068,-0*1.445,0.011,-0*1.334,0.025,-0*1.556,0.003,-0';
+var _b1a = '0,0.284,-0*-0.111,0.284,-0*-0.333,0.275,-0*-0.222,0.281,-0*-0.556,0.258,-0*-0.444,0.268,-0*-0.778,0.23,-0*-0.667,0.245,-0*-1,0.19,-0*-0.889,0.211,-0*-1.222,0.137,-0*-1.111,0.166,-0*-1.445,0.068,-0*-1.334,0.105,-0*-1.556,0.024,-0*0.111,0.284,-0*0.333,0.275,-0*0.222,0.281,-0*0.556,0.258,-0*0.444,0.268,-0*0.778,0.23,-0*0.667,0.245,-0*1,0.19,-0*0.889,0.211,-0*1.222,0.137,-0*1.111,0.166,-0*1.445,0.068,-0*1.334,0.105,-0*1.556,0.024,-0';
+var _b1r = '0,-0.284,-0*0.111,-0.284,-0*0.333,-0.275,-0*0.222,-0.281,-0*0.556,-0.258,-0*0.445,-0.268,-0*0.778,-0.23,-0*0.667,-0.245,-0*1,-0.19,-0*0.889,-0.211,-0*1.222,-0.137,-0*1.111,-0.166,-0*1.445,-0.068,-0*1.334,-0.105,-0*1.556,-0.024,-0*-0.111,-0.284,-0*-0.333,-0.275,-0*-0.222,-0.281,-0*-0.556,-0.258,-0*-0.444,-0.268,-0*-0.778,-0.23,-0*-0.667,-0.245,-0*-1,-0.19,-0*-0.889,-0.211,-0*-1.222,-0.137,-0*-1.111,-0.166,-0*-1.445,-0.068,-0*-1.334,-0.105,-0*-1.556,-0.024,-0';
 
-// Finial base Y (Standard arch = flat, no curve)
-export var FINIAL_BASE_Y = {
-    '1': 1.412,   // leaf=1 (Charleston, Savannah)
-    '2': 1.359,   // leaf=2 (Vanguard)
+// Vanguard: leaf=2 (f250 prefix) — 26 positions (13/side)
+var _f250_2s = '-0.177,0,-0*-0.4,0,-0*-0.622,0,-0*-0.844,0,-0*-1.066,0,-0*-1.289,0,-0*-1.511,0,-0*0.177,0,-0*0.4,0,-0*0.622,0,-0*0.844,0,-0*1.066,0,-0*1.289,0,-0*1.511,0,-0';
+var _f250_2e = '-0.177,0.298,-0*-0.4,0.27,-0*-0.622,0.22,-0*-0.844,0.146,-0*-1.066,0.073,-0*-1.289,0.026,-0*-1.511,0.004,-0*0.177,0.298,-0*0.4,0.27,-0*0.622,0.22,-0*0.844,0.146,-0*1.066,0.073,-0*1.289,0.026,-0*1.511,0.004,-0';
+var _f250_2a = '-0.177,0.281,-0*-0.4,0.27,-0*-0.622,0.248,-0*-0.844,0.215,-0*-1.066,0.169,-0*-1.289,0.107,-0*-1.511,0.025,-0*0.177,0.281,-0*0.4,0.27,-0*0.622,0.248,-0*0.844,0.215,-0*1.066,0.169,-0*1.289,0.107,-0*1.511,0.025,-0';
+var _f250_2r = '0.177,-0.281,-0*0.4,-0.27,-0*0.622,-0.248,-0*0.844,-0.215,-0*1.066,-0.169,-0*1.289,-0.107,-0*1.511,-0.025,-0*-0.177,-0.281,-0*-0.4,-0.27,-0*-0.622,-0.248,-0*-0.844,-0.215,-0*-1.066,-0.169,-0*-1.289,-0.107,-0*-1.511,-0.025,-0';
+
+// Lookup table: FINIAL_POSITIONS[category][leaf][arch] → [[x,y,z], ...]
+// category: 'spear' uses b{leaf}{arch}, 'flat' uses f250_{leaf}{arch}
+export var FINIAL_POSITIONS = {
+    spear: {
+        '1': { s: parseFinialPositions(_b1s), e: parseFinialPositions(_b1e), a: parseFinialPositions(_b1a), r: parseFinialPositions(_b1r) },
+    },
+    flat: {
+        '2': { s: parseFinialPositions(_f250_2s), e: parseFinialPositions(_f250_2e), a: parseFinialPositions(_f250_2a), r: parseFinialPositions(_f250_2r) },
+    },
 };
 
-// Per-arch finial Y offsets at each of the 13 X positions (from 0.177 to 1.511).
-// Extracted from live Ultra Charleston (UAS-100) on each arch style.
-// Standard = flat baseline (no offsets). Estate/Arched/Royal follow arch curves.
-// For leaf=2 styles (Vanguard), use every other offset (indices 0,2,4,...,12).
-export var FINIAL_ARCH_OFFSETS = {
-    s: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    e: [0.298, 0.286, 0.270, 0.248, 0.220, 0.185, 0.146, 0.107, 0.073, 0.047, 0.026, 0.012, 0.004],
-    a: [0.301, 0.297, 0.290, 0.280, 0.268, 0.253, 0.235, 0.214, 0.189, 0.160, 0.127, 0.089, 0.045],
-    r: [-0.296, -0.292, -0.285, -0.275, -0.263, -0.248, -0.230, -0.209, -0.184, -0.155, -0.122, -0.084, -0.040],
+// Base Y offset for finials (added to the Y from the position array)
+// Ultra positions are relative to arch midpoint; base Y shifts them to correct height
+export var FINIAL_BASE_Y = {
+    spear: 1.412,    // leaf=1 spear family
+    flat:  1.359,    // leaf=2 Vanguard
 };

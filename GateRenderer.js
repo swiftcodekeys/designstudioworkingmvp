@@ -20,8 +20,7 @@ import {
     ACCENT_CIRCLE_Y, ACCENT_BUTTERFLY_Y,
     ACCENT_CIRCLE_BOTTOM_Y, ACCENT_BUTTERFLY_BOTTOM_Y,
     ACCENT_CIRCLE_X, ACCENT_BUTTERFLY_X,
-    FINIAL_X_LEAF1, FINIAL_X_LEAF2,
-    FINIAL_BASE_Y, FINIAL_ARCH_OFFSETS,
+    FINIAL_POSITIONS, FINIAL_BASE_Y,
 } from './spatialConstants';
 import { getModelPath, FENCE_STYLES } from './configData';
 
@@ -328,31 +327,25 @@ GateRenderer.prototype.buildGate = function(config) {
         });
     }
 
-    // FINIALS — per-picket instancing with arch-following Y
-    // Extraction-verified: leaf=1 gets 13/side at butterfly X spacing,
-    // leaf=2 gets 7/side at every-other-picket spacing.
-    // Y position = base Y + arch offset at each X position.
+    // FINIALS — exact positions from Ultra's global position arrays.
+    // Ultra uses absolute XYZ positions per leaf+arch combo (both sides included).
+    // Category determines which lookup table: spear family uses 'b' prefix,
+    // Vanguard (flat w/ spears, mod=250) uses 'f250' prefix.
     if (config.finial && hasFinials) {
-        var finialXPositions = (leaf === '1') ? FINIAL_X_LEAF1 : FINIAL_X_LEAF2;
-        var finialBaseY = FINIAL_BASE_Y[leaf] || FINIAL_BASE_Y['2'];
-        var archOffsets = FINIAL_ARCH_OFFSETS[archId] || FINIAL_ARCH_OFFSETS.s;
+        var finCategory = (styleDef.category === 'spear') ? 'spear' : 'flat';
+        var finLeafPositions = FINIAL_POSITIONS[finCategory] && FINIAL_POSITIONS[finCategory][leaf];
+        var finPositions = finLeafPositions && finLeafPositions[archId];
+        var finBaseY = FINIAL_BASE_Y[finCategory] || 1.412;
 
-        loader.load(getModelPath('finial', config), function(geo) {
-            finialXPositions.forEach(function(x, idx) {
-                // For leaf=2, use every-other arch offset (indices 0,2,4,...,12)
-                var offsetIdx = (leaf === '1') ? idx : idx * 2;
-                var archY = (offsetIdx < archOffsets.length) ? archOffsets[offsetIdx] : 0;
-                var y = finialBaseY + archY;
-                // Place at +x and -x (both sides)
-                var meshR = new THREE.Mesh(geo, makeMat());
-                snap(meshR, [1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,0,1]);
-                gate.add(meshR);
-
-                var meshL = new THREE.Mesh(geo, makeMat());
-                snap(meshL, [1,0,0,0, 0,1,0,0, 0,0,1,0, -x,y,0,1]);
-                gate.add(meshL);
+        if (finPositions) {
+            loader.load(getModelPath('finial', config), function(geo) {
+                finPositions.forEach(function(pos) {
+                    var mesh = new THREE.Mesh(geo, makeMat());
+                    snap(mesh, [1,0,0,0, 0,1,0,0, 0,0,1,0, pos[0], finBaseY + pos[1], pos[2], 1]);
+                    gate.add(mesh);
+                });
             });
-        });
+        }
     }
 
     // ACCESSORIES
