@@ -16,6 +16,7 @@ import OptionGrid from './components/OptionGrid';
 import OptionList from './components/OptionList';
 import OpenTextQuestion from './components/OpenTextQuestion';
 import EmailGate from './components/EmailGate';
+import ResultsPage from './components/ResultsPage';
 
 function BottomCTA({ onStart }) {
   return (
@@ -206,18 +207,7 @@ function QuizContent() {
   }
 
   if (state.phase === 'results') {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        background: COLORS.bg,
-        fontFamily: FONTS.inter,
-        padding: '40px 24px',
-      }}>
-        <p style={{ textAlign: 'center', color: COLORS.textMuted }}>
-          Results — coming soon
-        </p>
-      </div>
-    );
+    return <ResultsPage />;
   }
 
   return null;
