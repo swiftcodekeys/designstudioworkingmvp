@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import Nav from './Nav';
 import UnifiedCanvas from './UnifiedCanvas';
 import Sidebar from './Sidebar';
 import { COLORS, FENCE_STYLES } from './configData';
+import QuizPage from './quiz/QuizPage';
 
-const App = () => {
+const DesignStudio = () => {
     const [activeTab, setActiveTab] = useState('gates');
     const defaultStyle = FENCE_STYLES[0];
     const [config, setConfig] = useState({
@@ -37,6 +39,15 @@ const App = () => {
                 </div>
             )}
         </div>
+    );
+};
+
+const App = () => {
+    return (
+        <Routes>
+            <Route path="/fence-quiz" element={<QuizPage />} />
+            <Route path="/*" element={<DesignStudio />} />
+        </Routes>
     );
 };
 
