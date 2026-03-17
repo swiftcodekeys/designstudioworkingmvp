@@ -39,7 +39,7 @@ function GateRenderer(container) {
     window._gateScene = this.scene;  // expose for regression testing
 
     // Camera — exact legacy values
-    this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+    this.camera = new THREE.PerspectiveCamera(40, 1, 1, 100);
     this.camera.zoom = 1.788;
     this.camera.position.set(0.82, 1.27, 7.2);
     this.camera.rotation.order = 'YXZ';
@@ -55,10 +55,7 @@ function GateRenderer(container) {
     container.appendChild(this.renderer.domElement);
 
     // Lighting
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    var dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(-5, 10, 5);
-    this.scene.add(dirLight);
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.5));
 
     // Clipping planes
     // CRITICAL: Post clips use normalized normals (0, -1, 0) — Ultra does the same.
@@ -181,7 +178,7 @@ GateRenderer.prototype.buildGate = function(config) {
             roughness: color.roughness !== undefined ? color.roughness : 0.1,
             metalness: color.metalness !== undefined ? color.metalness : 0.9,
             shading: THREE.FlatShading,
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide,
         });
     };
 
@@ -191,7 +188,7 @@ GateRenderer.prototype.buildGate = function(config) {
             roughness: color.roughness !== undefined ? color.roughness : 0.1,
             metalness: color.metalness !== undefined ? color.metalness : 0.9,
             shading: THREE.FlatShading,
-            side: THREE.DoubleSide,
+            side: THREE.FrontSide,
             clippingPlanes: [plane],
         });
     };
