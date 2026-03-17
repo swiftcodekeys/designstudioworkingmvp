@@ -75,7 +75,7 @@ export var FENCE_STYLES = [
   },
   {
     id: 'uas_150', code: 'UAS-150', name: 'Savannah', subtitle: 'Staggered Spear',
-    category: 'spear', series: '100', hasFinials: true,
+    category: 'spear', series: '100', hasFinials: true, isStaggered: true,
     supports3D: true, renderMode: '3d', meshCount: 53,
     options: ['pcf','pcb','fs','ft','fq','fp','res','ufr','mdr','xlr','pup'],
     accessories: ['tcr','tbu','scr','bcr','bbu'],

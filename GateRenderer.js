@@ -329,7 +329,9 @@ GateRenderer.prototype.buildGate = function(config) {
     // Category determines which lookup table: spear family uses 'b' prefix,
     // Vanguard (flat w/ spears, mod=250) uses 'f250' prefix.
     if (config.finial && hasFinials) {
-        var finCategory = (styleDef.category === 'spear') ? 'spear' : 'flat';
+        // Ultra's dfin(): stg → 'st'+lfI+arI, modI=='250' → 'f250_'+lfI+arI, else → 'b'+lfI+arI
+        var finCategory = styleDef.isStaggered ? 'staggered' :
+                          (styleDef.category === 'spear') ? 'spear' : 'flat';
         var finLeafPositions = FINIAL_POSITIONS[finCategory] && FINIAL_POSITIONS[finCategory][leaf];
         var finPositions = finLeafPositions && finLeafPositions[archId];
         var finBaseY = FINIAL_BASE_Y[finCategory] || 1.412;
