@@ -4,10 +4,18 @@
  */
 import React, { useEffect } from 'react';
 import { QuizProvider, useQuiz } from './QuizContext';
+import { QUESTIONS, TOTAL_QUESTIONS } from './quizData';
 import { COLORS, FONTS } from './styles/quizStyles';
 import LandingHero from './components/LandingHero';
 import ValueProp from './components/ValueProp';
 import Credibility from './components/Credibility';
+import ProgressBar from './components/ProgressBar';
+import QuestionCard from './components/QuestionCard';
+import QuizNav from './components/QuizNav';
+import OptionGrid from './components/OptionGrid';
+import OptionList from './components/OptionList';
+import OpenTextQuestion from './components/OpenTextQuestion';
+import EmailGate from './components/EmailGate';
 
 function BottomCTA({ onStart }) {
   return (
@@ -87,8 +95,35 @@ function QuizContent() {
     };
   }, []);
 
+  // Scroll to top when question changes
+  useEffect(function () {
+    if (state.phase === 'quiz') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [state.currentQuestion, state.phase]);
+
   function handleStart() {
     dispatch({ type: 'START_QUIZ' });
+  }
+
+  function handleSelect(value) {
+    var q = QUESTIONS[state.currentQuestion];
+    dispatch({
+      type: 'SET_ANSWER',
+      payload: { questionId: q.id, value: value, multiSelect: q.multiSelect },
+    });
+  }
+
+  function handleOpenText(value) {
+    dispatch({ type: 'SET_OPEN_TEXT', payload: value });
+  }
+
+  function handleNext() {
+    dispatch({ type: 'NEXT_QUESTION' });
+  }
+
+  function handleBack() {
+    dispatch({ type: 'PREV_QUESTION' });
   }
 
   if (state.phase === 'landing') {
@@ -107,33 +142,67 @@ function QuizContent() {
   }
 
   if (state.phase === 'quiz') {
+    var q = QUESTIONS[state.currentQuestion];
+    var answer = q.type === 'openText' ? state.openText : state.answers[q.id];
+    var canAdvance = q.type === 'openText'
+      ? true
+      : q.multiSelect
+        ? (Array.isArray(answer) && answer.length > 0)
+        : !!answer;
+
     return (
       <div style={{
         minHeight: '100vh',
         background: COLORS.bg,
         fontFamily: FONTS.inter,
-        padding: '40px 24px',
       }}>
-        <p style={{ textAlign: 'center', color: COLORS.textMuted }}>
-          Quiz phase — question components coming soon
-        </p>
+        <div style={{
+          maxWidth: 960,
+          margin: '0 auto',
+          padding: '40px 32px',
+        }}>
+          <ProgressBar
+            current={state.currentQuestion}
+            total={TOTAL_QUESTIONS}
+            block={q.block}
+            blockLabel={q.blockLabel}
+          />
+          <QuestionCard key={q.id} question={q.question} hint={q.hint}>
+            {q.block === 'visual' && (
+              <OptionGrid
+                options={q.options}
+                selected={answer}
+                multiSelect={q.multiSelect}
+                onSelect={handleSelect}
+              />
+            )}
+            {(q.block === 'scored' || (q.block === 'qualify' && q.type !== 'openText')) && (
+              <OptionList
+                options={q.options}
+                selected={answer}
+                onSelect={handleSelect}
+              />
+            )}
+            {q.type === 'openText' && (
+              <OpenTextQuestion
+                value={state.openText}
+                onChange={handleOpenText}
+              />
+            )}
+            <QuizNav
+              onBack={handleBack}
+              onNext={handleNext}
+              canAdvance={canAdvance}
+              isFirst={state.currentQuestion === 0}
+            />
+          </QuestionCard>
+        </div>
       </div>
     );
   }
 
   if (state.phase === 'gate') {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        background: COLORS.white,
-        fontFamily: FONTS.inter,
-        padding: '40px 24px',
-      }}>
-        <p style={{ textAlign: 'center', color: COLORS.textMuted }}>
-          Email gate — coming soon
-        </p>
-      </div>
-    );
+    return <EmailGate />;
   }
 
   if (state.phase === 'results') {

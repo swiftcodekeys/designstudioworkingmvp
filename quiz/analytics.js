@@ -20,12 +20,12 @@ export function questionAnswered(questionId, answer) {
   trackEvent('question_answered', { questionId, answer });
 }
 
-export function quizCompleted(score, tier) {
-  trackEvent('quiz_completed', { score, tier });
+export function quizCompleted(score, tier, systemName) {
+  trackEvent('quiz_completed', { score, tier, systemName });
 }
 
-export function emailSubmitted(email) {
-  trackEvent('email_submitted', { email });
+export function emailSubmitted(tier, hasPhone) {
+  trackEvent('email_submitted', { tier, hasPhone });
 }
 
 export function resultsViewed(matchedSystem, score) {

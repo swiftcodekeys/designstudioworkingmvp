@@ -78,14 +78,14 @@ function quizReducer(state, action) {
       };
 
     case 'SUBMIT_CONTACT':
-      return { ...state, contact: action.payload, phase: 'results' };
+      return { ...state, contact: action.contact || action.payload, phase: 'results' };
 
     case 'SET_RESULTS':
       return {
         ...state,
-        score: action.payload.score,
-        matchedSystem: action.payload.matchedSystem,
-        tier: action.payload.tier,
+        score: action.score != null ? action.score : (action.payload && action.payload.score),
+        matchedSystem: action.matchedSystem || (action.payload && action.payload.matchedSystem),
+        tier: action.tier || (action.payload && action.payload.tier),
       };
 
     case 'RETAKE':
