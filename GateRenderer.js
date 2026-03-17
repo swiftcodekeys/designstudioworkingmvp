@@ -105,9 +105,9 @@ function GateRenderer(container) {
                     self.updateMaterials(self._lastConfig);
                 }
 
-                // Clean up
-                pmremGenerator.dispose();
-                pmremCubeUVPacker.dispose();
+                // Clean up (r86: dispose may not exist on all objects)
+                if (pmremGenerator.dispose) pmremGenerator.dispose();
+                if (pmremCubeUVPacker.dispose) pmremCubeUVPacker.dispose();
             }, undefined, function(err) {
                 // HDR failed — fall back to PNG cube map
                 console.warn('HDR env map failed, falling back to PNG:', err);
