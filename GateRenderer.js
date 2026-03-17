@@ -143,6 +143,24 @@ GateRenderer.prototype.buildGate = function(config) {
     var styleDef = FENCE_STYLES.find(function(s) { return s.id === config.styleId; });
     var hasFinials = styleDef ? styleDef.hasFinials : false;
 
+    // fsv: vertical offset for spear family (stlI='s1'). LEAF_TRANSFORMS were extracted
+    // from flat family (fsv=0). Ultra applies fsv=-0.152 to ALL rail and picket Y positions
+    // for spear styles. We apply it here so the base transforms stay untouched.
+    var fsv = (styleDef && styleDef.category === 'spear') ? -0.152 : 0;
+    function applyFsv(m, fsvOffset) {
+        if (fsvOffset === 0) return m;
+        var out = m.slice();
+        out[13] = out[13] + fsvOffset;
+        return out;
+    }
+    var railT0    = applyFsv(lt.railT0, fsv);
+    var railT1    = applyFsv(lt.railT1, fsv);
+    var railB0    = applyFsv(lt.railB0, fsv);
+    var railB1    = applyFsv(lt.railB1, fsv);
+    var railB2    = applyFsv(lt.railB2, fsv);
+    var picketTop = applyFsv(lt.picketTop, fsv);
+    var ptOddStagger = (lt.picketTopOddStagger) ? applyFsv(lt.picketTopOddStagger, fsv) : null;
+
     // Arch-specific clipping (verified against legacy ultra_dsg_min.js)
     clips.post.constant = CLIP_POST;
     clips.post23.constant = CLIP_PO23[archId] || CLIP_PO23.e;
@@ -231,30 +249,30 @@ GateRenderer.prototype.buildGate = function(config) {
     // TOP RAILS — per-leaf Y positions
     // Haven (UAB-200, gN==4): r1 rail sits at -0.07 offset (compressed top gap)
     // vs standard -0.1905 offset. SPATIAL_TRUTH.json → rails → r1_second_rail_y → haven_gN4
-    var railT1Transform = (styleDef && styleDef.code === 'UAB-200') ? HAVEN_RAIL_T1 : lt.railT1;
+    var railT1Final = (styleDef && styleDef.code === 'UAB-200') ? HAVEN_RAIL_T1 : railT1;
     loader.load(getModelPath('railTop', config), function(geo) {
-        [lt.railT0, railT1Transform].forEach(function(m) {
+        [railT0, railT1Final].forEach(function(m) {
             var mesh = new THREE.Mesh(geo, makeMat());
             snap(mesh, m);
             gate.add(mesh);
         });
     });
 
-    // BOTTOM RAILS — per-leaf Y positions
+    // BOTTOM RAILS — per-leaf Y positions (fsv-adjusted)
     loader.load(getModelPath('railBot', config), function(geo) {
         var meshB = new THREE.Mesh(geo, makeMat());
-        snap(meshB, lt.railB2);
+        snap(meshB, railB2);
         gate.add(meshB);
 
         if (config.accessories && config.accessories.mdr) {
             var meshM = new THREE.Mesh(geo, makeMat());
-            snap(meshM, lt.railB0);
+            snap(meshM, railB0);
             gate.add(meshM);
         }
 
         if (config.accessories && config.accessories.xlr) {
             var meshX = new THREE.Mesh(geo, makeMat());
-            snap(meshX, lt.railB1);
+            snap(meshX, railB1);
             gate.add(meshX);
         }
 
@@ -267,14 +285,14 @@ GateRenderer.prototype.buildGate = function(config) {
         }
     });
 
-    // PICKETS — per-leaf Y positions
+    // PICKETS — per-leaf Y positions (fsv-adjusted)
     // Odd picket top: Vanguard (leaf=2 + hasFinials) staggers odd pickets lower
-    var ptOddTransform = (hasFinials && lt.picketTopOddStagger) ? lt.picketTopOddStagger : lt.picketTop;
+    var ptOddTransform = (hasFinials && ptOddStagger) ? ptOddStagger : picketTop;
 
     // Even pickets
     loader.load(getModelPath('ptEven', config), function(geo) {
         var mesh = new THREE.Mesh(geo, makeClipMat(clips.pt));
-        snap(mesh, lt.picketTop);
+        snap(mesh, picketTop);
         gate.add(mesh);
     });
     loader.load(getModelPath('pbEven', config), function(geo) {
@@ -301,7 +319,7 @@ GateRenderer.prototype.buildGate = function(config) {
     //   UAS-101: Y = tY + _12 + fsv = lt.picketTop (same as normal pickets)
     // pbRes uses separate clip plane for puppy support.
     var isProSpacing = styleDef && (styleDef.code === 'UAF-201' || styleDef.code === 'UAS-101');
-    var ptResTransform = (styleDef && styleDef.code === 'UAF-201') ? PTRES_Y_UAF201 : lt.picketTop;
+    var ptResTransform = (styleDef && styleDef.code === 'UAF-201') ? PTRES_Y_UAF201 : picketTop;
     loader.load(getModelPath('ptRes', config), function(geo) {
         var mesh = new THREE.Mesh(geo, makeClipMat(clips.pt));
         snap(mesh, ptResTransform);
