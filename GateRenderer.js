@@ -164,12 +164,19 @@ GateRenderer.prototype.updateMaterials = function(config) {
     var THREE = window.THREE;
     var color = config.color || { threeHex: 0x080808, metalness: 0.9, roughness: 0.1 };
     var gate = this.gate;
+    var self = this;
 
     gate.traverse(function(child) {
         if (child.isMesh && child.material) {
             child.material.color.setHex(color.threeHex);
             if (color.metalness !== undefined) child.material.metalness = color.metalness;
             if (color.roughness !== undefined) child.material.roughness = color.roughness;
+            // Env map (may have loaded after initial buildGate)
+            if (self._envMap) child.material.envMap = self._envMap;
+            child.material.envMapIntensity = color.envMapIntensity || 1.0;
+            // Bump map (may have loaded after initial buildGate)
+            if (self._bumpMap) child.material.bumpMap = self._bumpMap;
+            child.material.bumpScale = color.bumpScale || 0.0001;
             child.material.needsUpdate = true;
         }
     });
@@ -180,6 +187,7 @@ GateRenderer.prototype.updateMaterials = function(config) {
 // ============================================================
 GateRenderer.prototype.buildGate = function(config) {
     var THREE = window.THREE;
+    var self = this;
     var gate = this.gate;
     var clips = this.clips;
 
@@ -236,6 +244,10 @@ GateRenderer.prototype.buildGate = function(config) {
             color: color.threeHex,
             roughness: color.roughness !== undefined ? color.roughness : 0.1,
             metalness: color.metalness !== undefined ? color.metalness : 0.9,
+            envMap: self._envMap || null,
+            envMapIntensity: color.envMapIntensity || 1.0,
+            bumpMap: self._bumpMap || null,
+            bumpScale: color.bumpScale || 0.0001,
             shading: THREE.FlatShading,
             side: THREE.FrontSide,
         });
@@ -246,6 +258,10 @@ GateRenderer.prototype.buildGate = function(config) {
             color: color.threeHex,
             roughness: color.roughness !== undefined ? color.roughness : 0.1,
             metalness: color.metalness !== undefined ? color.metalness : 0.9,
+            envMap: self._envMap || null,
+            envMapIntensity: color.envMapIntensity || 1.0,
+            bumpMap: self._bumpMap || null,
+            bumpScale: color.bumpScale || 0.0001,
             shading: THREE.FlatShading,
             side: THREE.FrontSide,
             clippingPlanes: [plane],
