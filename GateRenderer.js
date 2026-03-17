@@ -199,19 +199,10 @@ GateRenderer.prototype.buildGate = function(config) {
         gate.add(mesh);
     });
 
-    // PO23 inner stiles — widen center gap for double-leaf gates
+    // PO23 inner stiles — gap is baked into po23.json model geometry (SPATIAL_TRUTH.json)
+    // Ultra does NOT vertex-shift po23. Previous CENTER_GAP code was wrong and has been removed.
     loader.load(getModelPath('po23', config), function(geo) {
-        var geoToUse = geo;
-        if (isDoubleLeaf && CENTER_GAP > 0) {
-            geoToUse = geo.clone();
-            for (var i = 0; i < geoToUse.vertices.length; i++) {
-                var v = geoToUse.vertices[i];
-                if (v.x < 0) v.x -= CENTER_GAP;
-                else if (v.x > 0) v.x += CENTER_GAP;
-            }
-            geoToUse.verticesNeedUpdate = true;
-        }
-        var mesh = new THREE.Mesh(geoToUse, makeClipMat(clips.post23));
+        var mesh = new THREE.Mesh(geo, makeClipMat(clips.post23));
         snap(mesh, M_IDENTITY);
         gate.add(mesh);
     });
