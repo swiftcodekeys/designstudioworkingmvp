@@ -18,6 +18,8 @@ function buildHashString(config) {
         'arch=' + config.arch,
         'leaf=' + (config.leaf || ''),
         'mount=' + (config.mount || ''),
+        'finial=' + (config.finial || ''),
+        'postCap=' + (config.postCap || ''),
     ];
     return parts.join('&');
 }
@@ -51,6 +53,8 @@ function buildConfigFromParams(params, defaultConfig) {
         arch: params.arch || defaultConfig.arch,
         leaf: params.leaf || defaultConfig.leaf,
         mount: params.mount || defaultConfig.mount,
+        finial: params.finial || (style.hasFinials ? 'fs' : null),
+        postCap: params.postCap || defaultConfig.postCap,
     });
     if (color) config.color = color;
 
@@ -148,7 +152,7 @@ var DesignStudio = function() {
         <div className="app-shell">
             <TopNav activeScene={activeTab} onSceneChange={setActiveTab} onReset={handleReset} onSaveImage={handleSaveImage} />
             <div className="viewport-wrap">
-                <UnifiedCanvas config={config} />
+                <UnifiedCanvas config={config} panelCollapsed={panelCollapsed} />
                 <SocialProof />
                 <BacklinksFooter />
                 <FloatingPanel
