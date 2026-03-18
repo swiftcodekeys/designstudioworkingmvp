@@ -274,26 +274,33 @@ GateRenderer.prototype.buildGate = function(config) {
 
     var loader = new THREE.JSONLoader();
 
-    // HINGES
-    loader.load(getModelPath('hinge', config), function(geo) {
-        M_HINGE.forEach(function(m) {
-            var mesh = new THREE.Mesh(geo, makeMat());
-            snap(mesh, m);
+    // Mount type: 'p' = post mount (default), 'd' = direct mount (no posts/hinges/caps)
+    var isPostMount = (config.mount !== 'd');
+
+    // HINGES — only for post mount
+    if (isPostMount) {
+        loader.load(getModelPath('hinge', config), function(geo) {
+            M_HINGE.forEach(function(m) {
+                var mesh = new THREE.Mesh(geo, makeMat());
+                snap(mesh, m);
+                gate.add(mesh);
+            });
+        });
+    }
+
+    // STRUCTURAL FRAME — only for post mount
+    if (isPostMount) {
+        loader.load(getModelPath('po40d', config), function(geo) {
+            var mesh = new THREE.Mesh(geo, makeClipMat(clips.post));
+            snap(mesh, M_IDENTITY);
             gate.add(mesh);
         });
-    });
-
-    // STRUCTURAL FRAME
-    loader.load(getModelPath('po40d', config), function(geo) {
-        var mesh = new THREE.Mesh(geo, makeClipMat(clips.post));
-        snap(mesh, M_IDENTITY);
-        gate.add(mesh);
-    });
-    loader.load(getModelPath('po14', config), function(geo) {
-        var mesh = new THREE.Mesh(geo, makeClipMat(clips.post));
-        snap(mesh, M_IDENTITY);
-        gate.add(mesh);
-    });
+        loader.load(getModelPath('po14', config), function(geo) {
+            var mesh = new THREE.Mesh(geo, makeClipMat(clips.post));
+            snap(mesh, M_IDENTITY);
+            gate.add(mesh);
+        });
+    }
 
     // PO23 inner stiles — gap is baked into po23.json model geometry (SPATIAL_TRUTH.json)
     // Ultra does NOT vertex-shift po23. Previous CENTER_GAP code was wrong and has been removed.
@@ -303,8 +310,8 @@ GateRenderer.prototype.buildGate = function(config) {
         gate.add(mesh);
     });
 
-    // POST CAPS
-    if (config.postCap) {
+    // POST CAPS — only for post mount
+    if (isPostMount && config.postCap) {
         loader.load(getModelPath('postCap', config), function(geo) {
             M_CAPS.forEach(function(m, idx) {
                 var mesh = new THREE.Mesh(geo, makeMat());
