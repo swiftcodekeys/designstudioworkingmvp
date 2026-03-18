@@ -389,6 +389,14 @@ html, body {
   box-shadow: 0 4px 16px var(--cta-glow);
 }
 
+.footer-cta-hint {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-hint);
+  font-weight: 500;
+  padding: 6px 0 2px;
+}
+
 /* --- Style Cards (grid layout for existing tabs) --- */
 .style-grid {
   display: grid;

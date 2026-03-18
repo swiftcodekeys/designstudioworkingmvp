@@ -231,6 +231,7 @@ var FloatingPanel = function(props) {
                         {nextLabel}
                     </button>
                 </div>
+                <div className="footer-cta-hint">Complete your design and get instant quote</div>
             </div>
         </div>
     );
