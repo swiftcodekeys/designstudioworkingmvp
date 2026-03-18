@@ -17,7 +17,7 @@ var TopNav = function(props) {
         <nav className="topnav">
             <div className="topnav-left">
                 <div className="topnav-logo">
-                    <img src="assets/logo.PNG" alt="Grandview" />
+                    <img src="assets/logo-white.png" alt="Grandview" />
                 </div>
                 <div className="topnav-brand">
                     <span className="brand-name">Grandview Fence</span>
