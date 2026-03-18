@@ -17,7 +17,7 @@ var STYLE_THUMBS = {
     uaf_250: 'assets/ifence_previews/gate_styles/sanibel_12.png',
     uab_200: 'assets/ifence_previews/gate_styles/boca_grande_45.png',
     uas_100: 'assets/ifence_previews/gate_styles/bella_vista_48.png',
-    uas_101: 'assets/ifence_previews/gate_styles/bella_vista_48.png',
+    uas_101: 'assets/ifence_previews/gate_styles/charleston_pro.png',
     uas_150: 'assets/ifence_previews/gate_styles/bella_terra_51.png',
 };
 
