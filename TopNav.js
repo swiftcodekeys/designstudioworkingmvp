@@ -20,7 +20,7 @@ var TopNav = function(props) {
                     <img src="assets/logo-white.png" alt="Grandview" />
                 </div>
                 <div className="topnav-brand">
-                    <span className="brand-name">Grandview Fence</span>
+                    <span className="brand-name">Grandview <span className="brand-fence">Fence</span></span>
                     <span className="brand-sub">Design Studio</span>
                 </div>
             </div>
