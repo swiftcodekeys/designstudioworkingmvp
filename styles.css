@@ -85,6 +85,7 @@ html, body {
   height: 48px;
   width: auto;
   object-fit: contain;
+  filter: invert(1);
 }
 .topnav-brand {
   display: flex;
