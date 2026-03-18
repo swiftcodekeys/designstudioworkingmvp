@@ -28,13 +28,15 @@ var StyleTab = function(props) {
 
     var handleStyleChange = function(styleId) {
         var style = FENCE_STYLES.find(function(s) { return s.id === styleId; });
-        onConfigChange({
-            ...config,
-            styleId: styleId,
-            post: style.postDefault,
-            leaf: style.leafDefault,
-            finial: style.hasFinials ? 'fs' : null,
-            accessories: {},
+        onConfigChange(function(prev) {
+            return {
+                ...prev,
+                styleId: styleId,
+                post: style.postDefault,
+                leaf: style.leafDefault,
+                finial: style.hasFinials ? 'fs' : null,
+                accessories: {},
+            };
         });
     };
 
