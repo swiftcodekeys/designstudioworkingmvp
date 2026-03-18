@@ -23,7 +23,6 @@ import {
     PTRES_Y_UAF201,
     HAVEN_RAIL_T1,
     RES_BOTTOM_RAIL_Y,
-    HEIGHT_DATA,
 } from './spatialConstants';
 import { getModelPath, FENCE_STYLES } from './configData';
 
@@ -230,42 +229,9 @@ GateRenderer.prototype.buildGate = function(config) {
     var picketTop = applyFsv(lt.picketTop, fsv);      // full fsv
     var ptOddStagger = (lt.picketTopOddStagger) ? applyFsv(lt.picketTopOddStagger, fsv) : null;
 
-    // ---- Dynamic height (Ultra: htY + _2_5, varies by arch for po23) ----
-    var heightData = HEIGHT_DATA[config.height] || HEIGHT_DATA['60'];
-    var htY = heightData.htY;
-    var _2_5 = 0.0635;
-    var _12 = 0.3048;
-
-    // Dynamic post clip: htY + _2_5
-    clips.post.constant = htY + _2_5;
-
-    // Dynamic po23 clip per arch style
-    var po23Clip;
-    if (archId === 'e' || archId === 'a') {
-        po23Clip = htY + _12 + _2_5;
-    } else if (archId === 'r') {
-        po23Clip = htY - _12 + _2_5;
-    } else {
-        po23Clip = htY + _2_5;
-    }
-    clips.post23.constant = po23Clip;
-
-    // ---- Height-dependent picket Y adjustment ----
-    // LEAF_TRANSFORMS were extracted at 60" (tY = -0.610). For other heights,
-    // apply a delta to picketTop Y position (matrix index [13]).
-    // Ultra formula: mY(grpte, tY + _12 + fsv) — our transforms embed the 60" value.
-    var tYDelta = heightData.tY - (-0.610); // delta from 60" baseline
-    // 48": -0.915 - (-0.610) = -0.305 (shift down)
-    // 60": -0.610 - (-0.610) = 0     (no change)
-    // 72": -0.305 - (-0.610) = 0.305 (shift up)
-    function applyHeightDelta(m, delta) {
-        if (delta === 0) return m;
-        var out = m.slice();
-        out[13] = out[13] + delta;
-        return out;
-    }
-    picketTop = applyHeightDelta(picketTop, tYDelta);
-    if (ptOddStagger) ptOddStagger = applyHeightDelta(ptOddStagger, tYDelta);
+    // Arch-specific clipping (verified against legacy ultra_dsg_min.js)
+    clips.post.constant = CLIP_POST;
+    clips.post23.constant = CLIP_PO23[archId] || CLIP_PO23.e;
 
     // Puppy clip: tighten res picket bottom when puppy is active
     var hasPuppy = config.accessories && config.accessories.pup;
@@ -437,7 +403,7 @@ GateRenderer.prototype.buildGate = function(config) {
     //   UAS-101: Y = tY + _12 + fsv = lt.picketTop (same as normal pickets)
     // pbRes uses separate clip plane for puppy support.
     var isProSpacing = styleDef && (styleDef.code === 'UAF-201' || styleDef.code === 'UAS-101');
-    var ptResTransform = (styleDef && styleDef.code === 'UAF-201') ? applyHeightDelta(PTRES_Y_UAF201, tYDelta) : picketTop;
+    var ptResTransform = (styleDef && styleDef.code === 'UAF-201') ? PTRES_Y_UAF201 : picketTop;
     loader.load(getModelPath('ptRes', config), function(geo) {
         var mesh = new THREE.Mesh(geo, makeClipMat(clips.pt));
         snap(mesh, ptResTransform);
