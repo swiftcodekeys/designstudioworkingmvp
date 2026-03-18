@@ -19,12 +19,8 @@ var TopNav = function(props) {
                 <div className="topnav-logo">
                     <img src="assets/logo.png" alt="Grandview" />
                 </div>
-                <div className="topnav-brand">
-                    <span className="name">Grandview <span className="fence">Fence</span></span>
-                    <span className="tool-name">Design Studio</span>
-                </div>
+                <span className="topnav-title">Design Studio</span>
             </div>
-            <div className="topnav-divider"></div>
             <div className="topnav-center">
                 {SCENES.map(function(scene) {
                     return (

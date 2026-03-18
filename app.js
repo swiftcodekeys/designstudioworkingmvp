@@ -153,8 +153,8 @@ var DesignStudio = function() {
             <TopNav activeScene={activeTab} onSceneChange={setActiveTab} onReset={handleReset} onSaveImage={handleSaveImage} />
             <div className="viewport-wrap">
                 <UnifiedCanvas config={config} panelCollapsed={panelCollapsed} />
-                <SocialProof />
-                <BacklinksFooter />
+                {!panelCollapsed && <SocialProof />}
+                <BacklinksFooter panelCollapsed={panelCollapsed} />
                 <FloatingPanel
                     activeTab={activeConfigTab}
                     onTabChange={setActiveConfigTab}

@@ -202,7 +202,7 @@ var UnifiedCanvas = function(props) {
         }}>
             <div ref={wrapperRef} style={{ position: 'absolute' }}>
                 <img
-                    src="assets/backgrounds/tool-background-gate_1960x1096.png"
+                    src="assets/backgrounds/GateBackground.jpg"
                     alt=""
                     style={{ width: '100%', height: '100%', display: 'block' }}
                 />
