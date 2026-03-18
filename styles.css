@@ -933,6 +933,13 @@ html, body {
   color: var(--text-primary);
   font-weight: 700;
 }
+@keyframes pillFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.social-proof-pill {
+  animation: pillFadeIn 0.4s ease;
+}
 
 /* Collapse Handle */
 .collapse-handle {
