@@ -38,8 +38,8 @@ function BuildingIcon() {
 
 var BADGES = [
   { icon: VeteranIcon, text: 'Veteran-Owned' },
-  { icon: EngineeredIcon, text: 'Engineered Systems' },
   { icon: BuildingIcon, text: 'Residential \u00b7 Commercial \u00b7 Government' },
+  { icon: EngineeredIcon, text: 'Made in the USA' },
 ];
 
 var styles = {

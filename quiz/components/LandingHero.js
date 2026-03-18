@@ -9,7 +9,7 @@ const styles = {
   wrapper: {
     position: 'relative',
     overflow: 'hidden',
-    background: 'linear-gradient(180deg, #78afcf 0%, #9dc5db 40%, #c4dde9 70%, #e8f1f5 100%)',
+    background: 'linear-gradient(180deg, #8fbdd4 0%, #a8cede 25%, #c0dae6 50%, #d6e6ee 75%, #e4eef4 100%)',
     paddingTop: 96,
     paddingBottom: 72,
     textAlign: 'center',
@@ -31,12 +31,13 @@ const styles = {
   },
   h1: {
     fontSize: 54,
-    fontWeight: 800,
+    fontWeight: 900,
     color: COLORS.white,
     letterSpacing: -1.5,
     lineHeight: 1.1,
     margin: 0,
     fontFamily: FONTS.inter,
+    textShadow: '0 2px 8px rgba(0,0,0,0.08)',
   },
   sub: {
     fontSize: 19,
@@ -75,14 +76,39 @@ export default function LandingHero({ onStart }) {
 
   return (
     <div style={styles.wrapper}>
-      {/* Subtle cloud shapes */}
+      {/* Realistic fluffy cloud shapes — matching grandviewfence.com sky theme */}
       <div style={styles.clouds}>
-        <svg width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 1200 500">
-          <ellipse cx="200" cy="120" rx="180" ry="60" fill="rgba(255,255,255,0.15)" />
-          <ellipse cx="320" cy="100" rx="140" ry="50" fill="rgba(255,255,255,0.12)" />
-          <ellipse cx="800" cy="160" rx="200" ry="55" fill="rgba(255,255,255,0.1)" />
-          <ellipse cx="950" cy="140" rx="120" ry="40" fill="rgba(255,255,255,0.13)" />
-          <ellipse cx="500" cy="300" rx="160" ry="45" fill="rgba(255,255,255,0.08)" />
+        <svg width="100%" height="100%" preserveAspectRatio="xMidYMid slice" viewBox="0 0 1400 500">
+          {/* Large cloud cluster — left */}
+          <g fill="rgba(255,255,255,0.28)">
+            <ellipse cx="120" cy="100" rx="120" ry="45" />
+            <ellipse cx="200" cy="80" rx="100" ry="55" />
+            <ellipse cx="280" cy="95" rx="90" ry="40" />
+            <ellipse cx="170" cy="70" rx="70" ry="35" />
+          </g>
+          {/* Medium cloud — center-left */}
+          <g fill="rgba(255,255,255,0.22)">
+            <ellipse cx="480" cy="130" rx="100" ry="38" />
+            <ellipse cx="540" cy="115" rx="80" ry="45" />
+            <ellipse cx="600" cy="128" rx="70" ry="32" />
+          </g>
+          {/* Large cloud cluster — right */}
+          <g fill="rgba(255,255,255,0.25)">
+            <ellipse cx="950" cy="90" rx="130" ry="50" />
+            <ellipse cx="1050" cy="75" rx="110" ry="55" />
+            <ellipse cx="1130" cy="88" rx="90" ry="40" />
+            <ellipse cx="1020" cy="65" rx="80" ry="35" />
+          </g>
+          {/* Small wispy cloud — far right */}
+          <g fill="rgba(255,255,255,0.18)">
+            <ellipse cx="1300" cy="140" rx="80" ry="30" />
+            <ellipse cx="1350" cy="130" rx="60" ry="35" />
+          </g>
+          {/* Lower subtle cloud */}
+          <g fill="rgba(255,255,255,0.12)">
+            <ellipse cx="700" cy="320" rx="140" ry="35" />
+            <ellipse cx="780" cy="310" rx="100" ry="40" />
+          </g>
         </svg>
       </div>
 
