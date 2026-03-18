@@ -95,6 +95,14 @@ export var CAP_INNER_Y = {
     r: 1.2675,
 };
 
+// Height constants (verified from Ultra runtime + SPATIAL_TRUTH.json)
+// htY = height in meters, tY = picket group Y offset
+export var HEIGHT_DATA = {
+    '48': { htY: 1.219, tY: -0.915 },
+    '60': { htY: 1.524, tY: -0.610 },
+    '72': { htY: 1.829, tY: -0.305 },
+};
+
 // ---- CLIPPING CONSTANTS (from extracted clippingPlanes) ----
 // Derived from legacy formula: htY + _2_5 where _2_5 = 0.0635
 // For 60" height: htY = 1.524, so post clip = 1.5875

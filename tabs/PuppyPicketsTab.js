@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { STYLE_FEATURE_GATE } from '../configData';
+import ImagePopup from './ImagePopup';
 
 var PUPPY_VARIANTS = [
     { id: 'std', name: 'Standard', thumb: 'gate_tool/th/th_pup_std.jpg' },
@@ -20,9 +21,13 @@ var PuppyPicketsTab = function(props) {
     var gate = STYLE_FEATURE_GATE[config.styleId] || {};
     var supportsPuppy = (gate.options || []).indexOf('pup') !== -1;
 
+    var hoverState = useState(null);
+    var popup = hoverState[0];
+    var setPopup = hoverState[1];
+
     if (!supportsPuppy) {
         return (
-            <div style={{ textAlign: 'center', color: 'rgba(240,242,245,0.5)', fontSize: '15px', fontWeight: 500 }}>
+            <div style={{ textAlign: 'center', color: '#5a6270', fontSize: '15px', fontWeight: 500 }}>
                 Puppy pickets are not available for this style. Try Horizon, Vanguard, Haven, Charleston, or Savannah.
             </div>
         );
@@ -33,7 +38,6 @@ var PuppyPicketsTab = function(props) {
     var handlePuppyClick = function(variantId) {
         var current = config.accessories || {};
         if (currentPup === variantId) {
-            // Toggle off
             var updated = { ...current };
             delete updated.pup;
             onConfigChange({ ...config, accessories: updated });
@@ -45,6 +49,22 @@ var PuppyPicketsTab = function(props) {
         }
     };
 
+    var handleMouseEnter = function(src, alt, event) {
+        var rect = event.currentTarget.getBoundingClientRect();
+        setPopup({
+            src: src,
+            alt: alt,
+            position: {
+                top: rect.top - 10,
+                left: rect.left - 290,
+            }
+        });
+    };
+
+    var handleMouseLeave = function() {
+        setPopup(null);
+    };
+
     return (
         <div className="option-row">
             {PUPPY_VARIANTS.map(function(variant) {
@@ -54,6 +74,8 @@ var PuppyPicketsTab = function(props) {
                         key={variant.id}
                         className={'opt-card' + (isActive ? ' active' : '')}
                         onClick={function() { handlePuppyClick(variant.id); }}
+                        onMouseEnter={function(e) { handleMouseEnter(variant.thumb, variant.name, e); }}
+                        onMouseLeave={handleMouseLeave}
                     >
                         <div className="opt-card-img">
                             <img src={variant.thumb} alt={variant.name} />
@@ -62,6 +84,7 @@ var PuppyPicketsTab = function(props) {
                     </div>
                 );
             })}
+            {popup && <ImagePopup src={popup.src} alt={popup.alt} position={popup.position} />}
         </div>
     );
 };

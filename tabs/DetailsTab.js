@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { STYLE_FEATURE_GATE, FENCE_STYLES } from '../configData';
+import ImagePopup from './ImagePopup';
 
 var POST_CAP_ITEMS = [
     { id: 'pcf', name: 'Flat', thumb: 'gate_tool/th/th_pstcp_flat.jpg' },
@@ -25,6 +26,10 @@ var DetailsTab = function(props) {
     var gate = STYLE_FEATURE_GATE[config.styleId] || {};
     var style = FENCE_STYLES.find(function(s) { return s.id === config.styleId; }) || FENCE_STYLES[0];
 
+    var hoverState = useState(null);
+    var popup = hoverState[0];
+    var setPopup = hoverState[1];
+
     var availablePostCaps = (gate.postCaps || []);
     var availableFinials = (gate.finials || []);
     var availableAccessories = (gate.accessories || []);
@@ -46,7 +51,6 @@ var DetailsTab = function(props) {
     };
 
     var handleFinialChange = function(finId) {
-        // Toggle off if already selected
         if (config.finial === finId) {
             onConfigChange({ ...config, finial: null });
         } else {
@@ -62,6 +66,22 @@ var DetailsTab = function(props) {
         });
     };
 
+    var handleMouseEnter = function(src, alt, event) {
+        var rect = event.currentTarget.getBoundingClientRect();
+        setPopup({
+            src: src,
+            alt: alt,
+            position: {
+                top: rect.top - 10,
+                left: rect.left - 290,
+            }
+        });
+    };
+
+    var handleMouseLeave = function() {
+        setPopup(null);
+    };
+
     return (
         <div className="sections-row">
             {filteredPostCaps.length > 0 && (
@@ -75,6 +95,8 @@ var DetailsTab = function(props) {
                                     key={pc.id}
                                     className={'opt-card' + (isActive ? ' active' : '')}
                                     onClick={function() { handlePostCapChange(pc.id); }}
+                                    onMouseEnter={function(e) { handleMouseEnter(pc.thumb, pc.name, e); }}
+                                    onMouseLeave={handleMouseLeave}
                                 >
                                     <div className="opt-card-img">
                                         <img src={pc.thumb} alt={pc.name} />
@@ -95,7 +117,7 @@ var DetailsTab = function(props) {
                             onClick={function() { handleFinialChange(null); }}
                         >
                             <div className="opt-card-img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <span style={{ color: 'rgba(240,242,245,0.3)', fontSize: '20px' }}>-</span>
+                                <span style={{ color: '#8e95a0', fontSize: '20px' }}>-</span>
                             </div>
                             <div className="opt-card-label">None</div>
                         </div>
@@ -106,6 +128,8 @@ var DetailsTab = function(props) {
                                     key={f.id}
                                     className={'opt-card' + (isActive ? ' active' : '')}
                                     onClick={function() { handleFinialChange(f.id); }}
+                                    onMouseEnter={function(e) { handleMouseEnter(f.thumb, f.name, e); }}
+                                    onMouseLeave={handleMouseLeave}
                                 >
                                     <div className="opt-card-img">
                                         <img src={f.thumb} alt={f.name} />
@@ -128,6 +152,8 @@ var DetailsTab = function(props) {
                                     key={acc.id}
                                     className={'opt-card' + (isActive ? ' active' : '')}
                                     onClick={function() { toggleAccent(acc.id); }}
+                                    onMouseEnter={function(e) { handleMouseEnter(acc.thumb, acc.name, e); }}
+                                    onMouseLeave={handleMouseLeave}
                                 >
                                     <div className="opt-card-img">
                                         <img src={acc.thumb} alt={acc.name} />
@@ -139,6 +165,7 @@ var DetailsTab = function(props) {
                     </div>
                 </div>
             )}
+            {popup && <ImagePopup src={popup.src} alt={popup.alt} position={popup.position} />}
         </div>
     );
 };
