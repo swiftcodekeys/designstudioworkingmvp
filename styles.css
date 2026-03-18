@@ -85,7 +85,8 @@ html, body {
   height: 48px;
   width: auto;
   object-fit: contain;
-  filter: invert(1);
+  filter: invert(1) brightness(2);
+  mix-blend-mode: screen;
 }
 .topnav-brand {
   display: flex;
